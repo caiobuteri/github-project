@@ -14,7 +14,7 @@ export const PageFollows = () => {
 
   return (
     <>
-      <FollowHeader type="follow" />
+      <FollowHeader listFollows={followers} type="follow" />
       <Main>
         {
           followers.map(follower => (

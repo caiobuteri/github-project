@@ -11,11 +11,10 @@ import { Container, Main } from './styles';
 
 export const Following = () => {
   const following = useSelector<IState, IResumeFollowing[]>(state => state.following);
-  console.log(following);
 
   return (
     <>
-      <FollowHeader type="following" />
+      <FollowHeader listFollows={following} type="following" />
       <Main>
         {
           following.map(item => (

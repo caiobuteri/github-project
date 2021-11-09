@@ -1,5 +1,6 @@
-import { useEffect } from "react";
-import { useParams } from "react-router";
+import { useEffect, useState } from "react";
+import { useParams, useHistory } from "react-router";
+import { useDispatch } from "react-redux";
 import { useSelector } from "react-redux";
 
 import { Container,
@@ -24,57 +25,80 @@ import { Container,
 
 import { BottomBar } from '../../components/BottomBar';
 
-import Photo from '../../assets/caio.jpg';
-
 import { AiOutlineLogout, AiOutlineLogin } from 'react-icons/ai';
 
 import { IState } from "../../store/store";
 import { IHome } from "../../store/modules/home/types";
 
-import { getPersonalData } from "../../utils/getPersonalData";
+import { addDataToHome } from "../../store/modules/home/action";
+import { addDataToRepos } from "../../store/modules/repos/action";
+import { addDataToFollowers } from "../../store/modules/followers/action";
+import { addDataToFollowing } from '../../store/modules/following/action';
+
+import { getPersonalData } from '../../utils/getPersonalData';
+import { getPublicRepos } from '../../utils/getPublicRepos';
+import { getFollowers } from '../../utils/getFollowers';
+import { getFollowing } from '../../utils/getFollowing';
 
 interface IParams {
   user?: string;
 }
 
 export const Home = () => {
+  const [ dataUser, setDataUser ] = useState({} as IHome);
+
   const params: IParams = useParams();
   const { user } = params;
+
+  const history = useHistory();
+  
+  const dispatch = useDispatch();
+  const data = useSelector<IState, IHome>(state => state.home);
 
   useEffect(() => {
     if (user){
       getData(user);
+    } else {
+      setDataUser(data);
     }
 
     async function getData(user: string){
       const DataHome = await getPersonalData(user);
-      
+      setDataUser(DataHome);
     }
   }, []);
 
-  if (user) {
-    
+  const handleChangeDataUser = async () => {
+    const DataHome = await getPersonalData(dataUser.login);
+    const DataRepos = await getPublicRepos(dataUser.login);
+    const DataFollowers = await getFollowers(dataUser.login);
+    const DataFollowing = await getFollowing(dataUser.login);
+
+    dispatch(addDataToHome(DataHome));
+    dispatch(addDataToRepos(DataRepos));
+    dispatch(addDataToFollowers(DataFollowers));
+    dispatch(addDataToFollowing(DataFollowing));
+
+    history.push('/home');
   }
-  
-  const data = useSelector<IState, IHome>(state => state.home);
 
   return (
     <Container>
 
       <Header>
         <HeaderContentBox>
-          <Tag>{data.login}</Tag>
+          <Tag>{dataUser.login}</Tag>
           <Logout>
             {
               user ?
-              <>
+              <Logout onClick={handleChangeDataUser}>
                 Entrar
                 <AiOutlineLogin size={30} color="green" />
-              </> :
-              <>
+              </Logout> :
+              <Logout>
                 Sair
                 <AiOutlineLogout size={30} color="red" />
-              </>
+              </Logout>
             }
           </Logout>
         </HeaderContentBox>
@@ -82,12 +106,12 @@ export const Home = () => {
 
       <Main>
         <PhotoBox>
-          <ProfilePhoto image={Photo} />
+          <ProfilePhoto image={dataUser.avatar_url} />
         </PhotoBox>
 
         <NameSpace>
           <Border />     
-          <Name>{data.name}</Name>
+          <Name>{dataUser.name}</Name>
         </NameSpace>
 
         <ComplementarInformation>caiobuteri@gmail.com</ComplementarInformation>
@@ -95,15 +119,15 @@ export const Home = () => {
 
         <NumbersContainer>
           <SpecificNumberContainer>
-            <Number>32</Number>
+            <Number>{dataUser.followers}</Number>
             <Title>Seguidores</Title>
           </SpecificNumberContainer>
           <SpecificNumberContainer>
-            <Number>32</Number>
+            <Number>{dataUser.following}</Number>
             <Title>Seguindo</Title>
           </SpecificNumberContainer>
           <SpecificNumberContainer>
-            <Number>10</Number>
+            <Number>{dataUser.public_repos}</Number>
             <Title>Repos</Title>
           </SpecificNumberContainer>
         </NumbersContainer>
@@ -114,11 +138,7 @@ export const Home = () => {
         </NameSpace>
 
         <Bio>
-          Contrary to popular belief, Lorem Ipsum is not simply random text.
-          It has roots in a piece of classical Latin literature from 45 BC,
-          making it over 2000 years old. Richard McClintock, a Latin professor
-          at Hampden-Sydney College in Virginia, looked up one of the more obscure
-          Latin words, consectetur.
+          {dataUser.bio}
         </Bio>
         <ContainerBottomBar>
           <BottomBar page="home" />
